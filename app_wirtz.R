@@ -1,3 +1,5 @@
+#Import librairies
+
 library(shiny)
 library(shinythemes)
 library(bslib)
@@ -24,23 +26,29 @@ export_dataframe <- read_csv("export_dataframe.csv")
 stade <- read_excel("stade.xlsx")
 coord <- read_excel("coord.xlsx")
 
-
+# Creation une variable top qui classe les équipes selon leur budget salariale
 coord<-coord%>%mutate(top = dense_rank(desc(Budget)))
 
 #######################################
 #        Traitement data----
 ######################################
+
+# Separation de la colonne score afin d'avoir le nombre de but pour l'equipe à domicile et à l'exterieur dans deux colonnes differentes
 dom_ext<-export_dataframe%>%separate(Score,c("Dom","Ext"),sep=(2))
 dom_ext<-dom_ext%>%mutate(Dom=substr(Dom,1,nchar(Dom)-1))
 dom_ext
 
+# Creation d'une colonne pour les points à domicile, de même à l'exterieur
 dom_ext<-dom_ext%>%mutate(pts_dom=case_when(dom_ext$Dom>dom_ext$Ext~3,dom_ext$Dom==dom_ext$Ext~1,dom_ext$Dom<dom_ext$Ext~0))
 dom_ext<-dom_ext%>%mutate(pts_ext=case_when(dom_ext$Ext>dom_ext$Dom~3,dom_ext$Ext==dom_ext$Dom~1,dom_ext$Ext<dom_ext$Dom~0))
+# Plusieurs saisons donc plusieurs equipes qui descendent/montent donc pas le même nombre de match, on fait une colonne pour avoir le nombre de match par équipe sur la periode
 dom_ext<-dom_ext%>%group_by(Domicile)%>%mutate(nb_match_dom=sum(length(Domicile)))
 dom_ext<-dom_ext%>%group_by(Extérieur)%>%mutate(nb_match_ext=sum(length(Extérieur)))
 
+# Agregation, on regarde le point au global pour les equipes 
 ptsdom<-dom_ext%>%group_by(Domicile)%>%summarize(sum(pts_dom))
 
+#
 ptsext<-dom_ext%>%group_by(Extérieur)%>%summarize(sum(pts_ext))
 ptsstade<-ptsdom%>%left_join(ptsext,by=c("Domicile"="Extérieur"))
 ptsstade<-ptsstade%>%dplyr::rename("Equipe"="Domicile","Points_Domicile"=`sum(pts_dom)`, "Points_Exterieur" = `sum(pts_ext)` )
