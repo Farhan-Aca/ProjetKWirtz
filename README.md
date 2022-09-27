@@ -11,4 +11,6 @@ Afin de réaliser notre projet
 
 # Les contributeurs
 
-Acalasow Farhan, Cantin Paul, Jeandel Florian
+- Acalasow Farhan
+- Cantin Paul
+- Jeandel Florian
