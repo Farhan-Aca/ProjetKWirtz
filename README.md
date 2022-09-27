@@ -6,3 +6,9 @@ Ce projet est décomposé en 2 parties.
 
 # Le Scrapping
 
+Afin de réaliser notre projet
+
+
+# Les contributeurs
+
+Acalasow Farhan, Cantin Paul, Jeandel Florian
