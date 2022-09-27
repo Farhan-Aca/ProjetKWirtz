@@ -14,7 +14,7 @@ Afin de réaliser notre projet, nous avons tout d'abord collecté des données s
 
 # Le traitement des données 
 
-A la suite, une fois que nous 
+A la suite, une fois que nous récupéré nos données, nous avons dû les traiter, les nettoyer tout d'abord puis les modifier, créer des nouveaux indicateurs afin d'en tirer des informations qui peuvent être exploitées graphiquement. 
 
 # La visualisation des données 
 
@@ -27,6 +27,8 @@ Le dashboard se décomponse ainsi :
 - Des statistiques sur les équipes
 - Des statistiques sur les joueurs
 - Page de "crédit" où l'on cite nos sources, références et inspirations. 
+
+Nous avons fait le choix de faire un Dashboard pour y exploiter des librairies interactives comme Plotly ou Leaflet, et de rendre l'expérience utilisateurs plus complètes, lisibles et intéressante. 
 
 # Les contributeurs
 
