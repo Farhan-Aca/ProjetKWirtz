@@ -48,11 +48,12 @@ dom_ext<-dom_ext%>%group_by(Extérieur)%>%mutate(nb_match_ext=sum(length(Extéri
 # Agregation, on regarde le point au global pour les equipes 
 ptsdom<-dom_ext%>%group_by(Domicile)%>%summarize(sum(pts_dom))
 
-#
+# Points par equipe, distinction entre domicile et exterieur, version globale
 ptsext<-dom_ext%>%group_by(Extérieur)%>%summarize(sum(pts_ext))
 ptsstade<-ptsdom%>%left_join(ptsext,by=c("Domicile"="Extérieur"))
 ptsstade<-ptsstade%>%dplyr::rename("Equipe"="Domicile","Points_Domicile"=`sum(pts_dom)`, "Points_Exterieur" = `sum(pts_ext)` )
 
+# Points par equipe par match selon le lieu du match
 ppmdom<-dom_ext%>%group_by(Domicile)%>%summarize("Points_Domicile"=sum(pts_dom)/nb_match_dom)
 ppmdom<-ppmdom%>%distinct(Domicile,Points_Domicile)
 ppmext<-dom_ext%>%group_by(Extérieur)%>%summarize("Points_Exterieur"=sum(pts_ext)/nb_match_ext)
@@ -64,13 +65,18 @@ table(dom_ext$Domicile)
 
 summary(coord)
 
+# on met les variables de latitude et longitude en numeric pour les utilisers dans leaflet par la suite
 coord$Lat<-as.numeric(coord$Lat)
 coord$Long<-as.numeric(coord$Long)
 
+# creation d'une variable pour determiner le rang d'une équipe selon son budget salariale
 coord<-coord%>%mutate(tier=case_when(top<5~"Top 1 Budget",top>4&top<10~"Top 2 Budget",top>9&top<15~"Top 3 Budget",
                                      top>14~"Top 4 Budget"))
 
+# on sépare les digits, pour plus de lisibilité 
 coord$Budget<-ifelse(!grepl("\\D", coord$Budget), format(as.numeric(coord$Budget), big.mark = " ", trim = T), string)
+
+#fonction pour les couleurs des markers sur la carte Leaflet
 
 getColor <- function(coord) {
   sapply(coord$top, function(top) {
@@ -86,7 +92,7 @@ getColor <- function(coord) {
      } } )}
 
 
-
+#Type de l'icons du marker
 icons <- awesomeIcons(
   icon = 'home',
   iconColor = 'black',
