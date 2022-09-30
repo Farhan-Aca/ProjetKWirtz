@@ -114,9 +114,10 @@ coordmap<-coord %>%
 ###           Shiny                ###
 ######################################
 ui <- dashboardPage(skin="purple",title="Premier League stats",
-                     dashboardHeader(title ='PL stats',titleWidth = 300),
+                     dashboardHeader(title ='PL stats',titleWidth = 300), 
                       dashboardSidebar(
-                        sidebarMenu(HTML(paste0(
+                        sidebarMenu(#Insertion de l'image, des href pour lien vers le Github..)
+                          HTML(paste0(
                           "<br>",
                           "<a href='https://www.nps.gov/index.htm' target='_blank'><img style = 'display: block;
                           margin-left: auto; margin-right: auto;' src='https://scontent.fsxb1-1.fna.fbcdn.net/v/t1.15752-9/305591168_665265044534990_1443497876533106748_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=ae9488&_nc_ohc=X2plodk-ILkAX_iqyZY&_nc_ht=scontent.fsxb1-1.fna&oh=03_AVLofsJeK5WdJw0c4GyIrqAz_Kmv_15KX1ZG41jItqUTPQ&oe=634E4E46' 
@@ -126,6 +127,7 @@ ui <- dashboardPage(skin="purple",title="Premier League stats",
                           href='https://www.nps.gov/subjects/hfc/arrowhead-artwork.htm' target='_blank'>Logo de la Premier League</a>
                           </small></p>",
                           "<br>")),
+                          #Creation des modules  
                         menuItem("Read",tabName="lire",icon=icon("house")),
                         menuItem("Infos",tabName="Tableau",icon = icon("house")),
                         menuItem("Clubs",tabName="Carte",icon = icon("house")),
@@ -133,14 +135,14 @@ ui <- dashboardPage(skin="purple",title="Premier League stats",
                                 menuSubItem("Domicile/Extérieur",tabName = "DE",icon=icon("house")))
                       )),
                      dashboardBody(
+                       #Creation du contenu
                        tabItems(
-                        tabItem(tabName = "lire",fluidPage(includeHTML("wirtz.html")
-                                  )),
-                         tabItem(tabName = "Carte",fluidRow(column(6,leafletOutput("map",height=700)),
+                        tabItem(tabName = "lire",fluidPage(includeHTML("wirtz.html"))), #HTML de notre presentation
+                         tabItem(tabName = "Carte",fluidRow(column(6,leafletOutput("map",height=700)), #Creation de la carte interactive
                                  column(6,tags$head(tags$script('!function(d,s,id){var js,fjs=d.getElementsByTagName(s)    [0],p=/^http:/.test(d.location)?\'http\':\'https\';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");')), 
                                         a(class="twitter-timeline","data-height"="700","data-width"="600",
                                           href="https://twitter.com/projetwirtz/lists/1573949714982211590"
-                                        )))),
+                                        )))), #Insertion des tweets 
                        tabItem(tabName = "Tableau",h1("test"),reactableOutput("tab1")),
                        tabItem(tabName = "DE",fluidPage(
                                                           selectizeInput("team","Choix de l'equipe",choices = sort(unique(dom_ext$Domicile)),
