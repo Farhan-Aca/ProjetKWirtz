@@ -1,5 +1,3 @@
-#Import librairies
-
 library(shiny)
 library(shinythemes)
 library(bslib)
@@ -25,35 +23,31 @@ library(tidyr)
 export_dataframe <- read_csv("export_dataframe.csv")
 stade <- read_excel("stade.xlsx")
 coord <- read_excel("coord.xlsx")
+indiv<-read_excel("data_tfoot.xlsx")
 
-# Creation une variable top qui classe les équipes selon leur budget salariale
+
 coord<-coord%>%mutate(top = dense_rank(desc(Budget)))
 
 #######################################
 #        Traitement data----
 ######################################
 
-# Separation de la colonne score afin d'avoir le nombre de but pour l'equipe à domicile et à l'exterieur dans deux colonnes differentes
+
 dom_ext<-export_dataframe%>%separate(Score,c("Dom","Ext"),sep=(2))
 dom_ext<-dom_ext%>%mutate(Dom=substr(Dom,1,nchar(Dom)-1))
 dom_ext
 
-# Creation d'une colonne pour les points à domicile, de même à l'exterieur
 dom_ext<-dom_ext%>%mutate(pts_dom=case_when(dom_ext$Dom>dom_ext$Ext~3,dom_ext$Dom==dom_ext$Ext~1,dom_ext$Dom<dom_ext$Ext~0))
 dom_ext<-dom_ext%>%mutate(pts_ext=case_when(dom_ext$Ext>dom_ext$Dom~3,dom_ext$Ext==dom_ext$Dom~1,dom_ext$Ext<dom_ext$Dom~0))
-# Plusieurs saisons donc plusieurs equipes qui descendent/montent donc pas le même nombre de match, on fait une colonne pour avoir le nombre de match par équipe sur la periode
 dom_ext<-dom_ext%>%group_by(Domicile)%>%mutate(nb_match_dom=sum(length(Domicile)))
 dom_ext<-dom_ext%>%group_by(Extérieur)%>%mutate(nb_match_ext=sum(length(Extérieur)))
 
-# Agregation, on regarde le point au global pour les equipes 
 ptsdom<-dom_ext%>%group_by(Domicile)%>%summarize(sum(pts_dom))
 
-# Points par equipe, distinction entre domicile et exterieur, version globale
 ptsext<-dom_ext%>%group_by(Extérieur)%>%summarize(sum(pts_ext))
 ptsstade<-ptsdom%>%left_join(ptsext,by=c("Domicile"="Extérieur"))
 ptsstade<-ptsstade%>%dplyr::rename("Equipe"="Domicile","Points_Domicile"=`sum(pts_dom)`, "Points_Exterieur" = `sum(pts_ext)` )
 
-# Points par equipe par match selon le lieu du match
 ppmdom<-dom_ext%>%group_by(Domicile)%>%summarize("Points_Domicile"=sum(pts_dom)/nb_match_dom)
 ppmdom<-ppmdom%>%distinct(Domicile,Points_Domicile)
 ppmext<-dom_ext%>%group_by(Extérieur)%>%summarize("Points_Exterieur"=sum(pts_ext)/nb_match_ext)
@@ -65,19 +59,15 @@ table(dom_ext$Domicile)
 
 summary(coord)
 
-# on met les variables de latitude et longitude en numeric pour les utilisers dans leaflet par la suite
 coord$Lat<-as.numeric(coord$Lat)
 coord$Long<-as.numeric(coord$Long)
 
-# creation d'une variable pour determiner le rang d'une équipe selon son budget salariale
 coord<-coord%>%mutate(tier=case_when(top<5~"Top 1 Budget",top>4&top<10~"Top 2 Budget",top>9&top<15~"Top 3 Budget",
                                      top>14~"Top 4 Budget"))
 
-# on sépare les digits, pour plus de lisibilité 
+#Espace tous les 3 chiffres pour plus de lisibilité 
 coord$Budget<-ifelse(!grepl("\\D", coord$Budget), format(as.numeric(coord$Budget), big.mark = " ", trim = T), string)
-
-#fonction pour les couleurs des markers sur la carte Leaflet
-
+coord$Capacité<-ifelse(!grepl("\\D", coord$Capacité), format(as.numeric(coord$Capacité), big.mark = " ", trim = T), string)
 getColor <- function(coord) {
   sapply(coord$top, function(top) {
     if(top< 5) {
@@ -89,10 +79,22 @@ getColor <- function(coord) {
     }
       else if(top>14){
       "red"
-     } } )}
+      } } )}
 
+indiv<-indiv%>%filter(!is.na(id))%>%rename(Equipe=`Equipe à domicile`)
+indiv_prep<-indiv%>%select(id,`Equipe à l'exterieur`,Equipe)
+indiv_prep<-indiv_prep%>%mutate(lieu=if_else(!is.na(Equipe),"D","E"),
+                               Equipe=case_when(is.na(Equipe)~`Equipe à l'exterieur`,!is.na(Equipe)~Equipe))
+indiv_bon<-indiv_prep%>%cbind(indiv)
+indiv_bon<-indiv_bon[,-c(2,5,7,36)]
+indiv_bon[,c(6:32)]<-sapply(indiv_bon[,c(6:32)],as.numeric)
+nb_match<-indiv_bon%>%count(Equipe)%>%rename(nb_match=n)
+indiv_bon<-indiv_bon%>%left_join(nb_match,by="Equipe")
+indiv_bon<-indiv_bon%>%mutate(position = substr(position,1,2))
+indiv_bon<-indiv_bon%>%group_by(Equipe)%>%mutate(minutes_joues = sum(`Minute joué`),buts_marques=sum(buts),
+                        passe_de=sum(`passe décisive`),peno=sum(`penalty marqué`),peno_tire=sum(`penalty tiré`),
+                        tirs_total=sum(tirs),tirs_cadres=sum(`tirs cadrés`))
 
-#Type de l'icons du marker
 icons <- awesomeIcons(
   icon = 'home',
   iconColor = 'black',
@@ -114,10 +116,9 @@ coordmap<-coord %>%
 ###           Shiny                ###
 ######################################
 ui <- dashboardPage(skin="purple",title="Premier League stats",
-                     dashboardHeader(title ='PL stats',titleWidth = 300), 
+                     dashboardHeader(title ='PL stats',titleWidth = 300),
                       dashboardSidebar(
-                        sidebarMenu(#Insertion de l'image, des href pour lien vers le Github..)
-                          HTML(paste0(
+                        sidebarMenu(HTML(paste0(
                           "<br>",
                           "<a href='https://www.nps.gov/index.htm' target='_blank'><img style = 'display: block;
                           margin-left: auto; margin-right: auto;' src='https://scontent.fsxb1-1.fna.fbcdn.net/v/t1.15752-9/305591168_665265044534990_1443497876533106748_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=ae9488&_nc_ohc=X2plodk-ILkAX_iqyZY&_nc_ht=scontent.fsxb1-1.fna&oh=03_AVLofsJeK5WdJw0c4GyIrqAz_Kmv_15KX1ZG41jItqUTPQ&oe=634E4E46' 
@@ -127,7 +128,6 @@ ui <- dashboardPage(skin="purple",title="Premier League stats",
                           href='https://www.nps.gov/subjects/hfc/arrowhead-artwork.htm' target='_blank'>Logo de la Premier League</a>
                           </small></p>",
                           "<br>")),
-                          #Creation des modules  
                         menuItem("Read",tabName="lire",icon=icon("house")),
                         menuItem("Infos",tabName="Tableau",icon = icon("house")),
                         menuItem("Clubs",tabName="Carte",icon = icon("house")),
@@ -135,14 +135,14 @@ ui <- dashboardPage(skin="purple",title="Premier League stats",
                                 menuSubItem("Domicile/Extérieur",tabName = "DE",icon=icon("house")))
                       )),
                      dashboardBody(
-                       #Creation du contenu
                        tabItems(
-                        tabItem(tabName = "lire",fluidPage(includeHTML("wirtz.html"))), #HTML de notre presentation
-                         tabItem(tabName = "Carte",fluidRow(column(6,leafletOutput("map",height=700)), #Creation de la carte interactive
+                        tabItem(tabName = "lire",fluidPage(includeHTML("wirtz.html")
+                                  )),
+                         tabItem(tabName = "Carte",fluidRow(column(6,leafletOutput("map",height=700)),
                                  column(6,tags$head(tags$script('!function(d,s,id){var js,fjs=d.getElementsByTagName(s)    [0],p=/^http:/.test(d.location)?\'http\':\'https\';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");')), 
                                         a(class="twitter-timeline","data-height"="700","data-width"="600",
                                           href="https://twitter.com/projetwirtz/lists/1573949714982211590"
-                                        )))), #Insertion des tweets 
+                                        )))),
                        tabItem(tabName = "Tableau",h1("test"),reactableOutput("tab1")),
                        tabItem(tabName = "DE",fluidPage(
                                                           selectizeInput("team","Choix de l'equipe",choices = sort(unique(dom_ext$Domicile)),
