@@ -91,20 +91,30 @@ getColor <- function(coord) {
       "red"
       } } )}
 
+    
+#data scrappee sur fbref, on va selectionner les bonnes lignes (il y a des lignes vides) et on renomme les colonnes 
 indiv<-indiv%>%filter(!is.na(id))%>%rename(Equipe=`Equipe à domicile`)
 indiv_prep<-indiv%>%select(id,`Equipe à l'exterieur`,Equipe)
+#on cree une colonne où on sait qui est à domicile ou exterieur et une colonne où on n'a plus de vide
 indiv_prep<-indiv_prep%>%mutate(lieu=if_else(!is.na(Equipe),"D","E"),
                                Equipe=case_when(is.na(Equipe)~`Equipe à l'exterieur`,!is.na(Equipe)~Equipe))
+#jointure 
 indiv_bon<-indiv_prep%>%cbind(indiv)
 indiv_bon<-indiv_bon[,-c(2,5,7,36)]
+#bon format
 indiv_bon[,c(6:32)]<-sapply(indiv_bon[,c(6:32)],as.numeric)
+#stats indiv, combien de match le joueur a joué ?
 nb_match<-indiv_bon%>%count(Equipe)%>%rename(nb_match=n)
+#jointure
 indiv_bon<-indiv_bon%>%left_join(nb_match,by="Equipe")
+#on fait le choix de selectionner seulement la postion numéro 1
 indiv_bon<-indiv_bon%>%mutate(position = substr(position,1,2))
+#agregat de plusieurs variables qui seront utilisées dans les graphiques.
 indiv_bon<-indiv_bon%>%group_by(Equipe)%>%mutate(minutes_joues = sum(`Minute joué`),buts_marques=sum(buts),
                         passe_de=sum(`passe décisive`),peno=sum(`penalty marqué`),peno_tire=sum(`penalty tiré`),
                         tirs_total=sum(tirs),tirs_cadres=sum(`tirs cadrés`))
 
+#icone style 
 icons <- awesomeIcons(
   icon = 'home',
   iconColor = 'black',
