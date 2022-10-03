@@ -32,22 +32,28 @@ coord<-coord%>%mutate(top = dense_rank(desc(Budget)))
 #        Traitement data----
 ######################################
 
-
+#on separe la colonne score en deux pour avoir les buts dom ext et on fait une colonne adequate
 dom_ext<-export_dataframe%>%separate(Score,c("Dom","Ext"),sep=(2))
 dom_ext<-dom_ext%>%mutate(Dom=substr(Dom,1,nchar(Dom)-1))
 dom_ext
 
+#on calcule le nb de points
 dom_ext<-dom_ext%>%mutate(pts_dom=case_when(dom_ext$Dom>dom_ext$Ext~3,dom_ext$Dom==dom_ext$Ext~1,dom_ext$Dom<dom_ext$Ext~0))
 dom_ext<-dom_ext%>%mutate(pts_ext=case_when(dom_ext$Ext>dom_ext$Dom~3,dom_ext$Ext==dom_ext$Dom~1,dom_ext$Ext<dom_ext$Dom~0))
+
+#on compte le nombre de match effectué par equipe
 dom_ext<-dom_ext%>%group_by(Domicile)%>%mutate(nb_match_dom=sum(length(Domicile)))
 dom_ext<-dom_ext%>%group_by(Extérieur)%>%mutate(nb_match_ext=sum(length(Extérieur)))
 
+#on compte le nb de pts dom et ext
 ptsdom<-dom_ext%>%group_by(Domicile)%>%summarize(sum(pts_dom))
-
 ptsext<-dom_ext%>%group_by(Extérieur)%>%summarize(sum(pts_ext))
+#jointure
 ptsstade<-ptsdom%>%left_join(ptsext,by=c("Domicile"="Extérieur"))
+#bon nom
 ptsstade<-ptsstade%>%dplyr::rename("Equipe"="Domicile","Points_Domicile"=`sum(pts_dom)`, "Points_Exterieur" = `sum(pts_ext)` )
 
+#agregat par match
 ppmdom<-dom_ext%>%group_by(Domicile)%>%summarize("Points_Domicile"=sum(pts_dom)/nb_match_dom)
 ppmdom<-ppmdom%>%distinct(Domicile,Points_Domicile)
 ppmext<-dom_ext%>%group_by(Extérieur)%>%summarize("Points_Exterieur"=sum(pts_ext)/nb_match_ext)
@@ -59,15 +65,19 @@ table(dom_ext$Domicile)
 
 summary(coord)
 
+#Coordonne au bon format
 coord$Lat<-as.numeric(coord$Lat)
 coord$Long<-as.numeric(coord$Long)
 
+#categorisation des budgets
 coord<-coord%>%mutate(tier=case_when(top<5~"Top 1 Budget",top>4&top<10~"Top 2 Budget",top>9&top<15~"Top 3 Budget",
                                      top>14~"Top 4 Budget"))
 
 #Espace tous les 3 chiffres pour plus de lisibilité 
 coord$Budget<-ifelse(!grepl("\\D", coord$Budget), format(as.numeric(coord$Budget), big.mark = " ", trim = T), string)
 coord$Capacité<-ifelse(!grepl("\\D", coord$Capacité), format(as.numeric(coord$Capacité), big.mark = " ", trim = T), string)
+
+#Couleur des markers
 getColor <- function(coord) {
   sapply(coord$top, function(top) {
     if(top< 5) {
