@@ -1,4 +1,4 @@
-# Projet Premier League
+# Projet Premier League lien : https://projetperso.shinyapps.io/app_wirtz/
 
 Ce projet a lieu dans le cadre d'un cours de Master 2 Data Science de la Faculté des Sciences Economiques et de Gestion de Strasbourg. 
 
