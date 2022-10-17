@@ -30,6 +30,10 @@ Le dashboard se décomponse ainsi :
 
 Nous avons fait le choix de faire un Dashboard pour y exploiter des librairies interactives comme Plotly ou Leaflet, et de rendre l'expérience utilisateurs plus complètes, lisibles et intéressante. 
 
+# Fonctionnement 
+
+Pour run le code, il faut prendre les fichiers utilisés dans fichier utiles, puis utiliser les packages, faire le traitement des datas avant de passer à l'ui puis au server et enfin à shiny qui combine les deux
+
 # Les contributeurs
 
 - Acalasow Farhan
