@@ -31,9 +31,9 @@ ui <- dashboardPage(skin="purple",title="Premier League stats",
                       )),
                     dashboardBody(
                       tabItems(
-                        tabItem(tabName = "lire",fluidPage(includeHTML("app_wirtz/wirtz.html")
+                        tabItem(tabName = "lire",fluidPage(includeHTML("wirtz.html")
                         )),
-                        tabItem(tabName = "Li",fluidPage(includeHTML("app_wirtz/liens.html")
+                        tabItem(tabName = "Li",fluidPage(includeHTML("liens.html")
                         )),
                         tabItem(tabName = "Carte",fluidRow(column(6,leafletOutput("map",height=700)),
                                                            column(6,tags$head(tags$script('!function(d,s,id){var js,fjs=d.getElementsByTagName(s)    [0],p=/^http:/.test(d.location)?\'http\':\'https\';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");')), 
